@@ -1,0 +1,24 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "runArgs": ["--name", "gipod-scraper"],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22.11.0"
+    }
+  },
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "orta.vscode-jest",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "prisma.prisma"
+      ]
+    }
+  }
+}

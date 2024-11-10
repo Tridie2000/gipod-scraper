@@ -1,0 +1,23 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "module": "CommonJS",
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "outDir": "build",
+    "sourceMap": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "isolatedModules": false,
+    "skipLibCheck": true
+  },
+  "compileOnSave": true,
+  "include": ["src"],
+  "ts-node": {
+    "files": true
+  }
+}
