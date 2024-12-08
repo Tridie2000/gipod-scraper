@@ -56,7 +56,9 @@ function populateClosureList(closures, map) {
     const hindranceEl = document.getElementById('hindrance');
     const handledEl = document.getElementById('handled');
     const toggleButton = document.getElementById('toggle-button');
-    let geojsonLayer = null;
+
+    // Store active polygons to remove them when switching closures
+    let activeLayers = [];
 
     closures.forEach((closure, index) => {
         const li = document.createElement('li');
@@ -74,28 +76,37 @@ function populateClosureList(closures, map) {
                 closure.handled = updatedClosure.handled;
 
                 // Update polygon color
-                if (geojsonLayer) {
-                    map.removeLayer(geojsonLayer.id);
-                    map.removeSource(geojsonLayer.id);
-                }
-                addPolygonLayer(map, closure);
+                removeActiveLayers(map, activeLayers);
+                addPolygonLayer(map, closure, activeLayers);
             };
 
-            // Remove existing GeoJSON layer
-            if (geojsonLayer) {
-                map.removeLayer(geojsonLayer.id);
-                map.removeSource(geojsonLayer.id);
-            }
+            // Remove all active polygons
+            removeActiveLayers(map, activeLayers);
 
             // Add new GeoJSON layer
-            addPolygonLayer(map, closure);
+            addPolygonLayer(map, closure, activeLayers);
+
+            // Zoom to fit the new polygon
+            zoomToPolygon(map, closure);
         });
 
         closureList.appendChild(li);
     });
 }
 
-function addPolygonLayer(map, closure) {
+// Function to remove active layers
+function removeActiveLayers(map, activeLayers) {
+    activeLayers.forEach((layerId) => {
+        if (map.getSource(layerId)) {
+            map.removeLayer(layerId);
+            map.removeSource(layerId);
+        }
+    });
+    activeLayers.length = 0; // Clear the active layers array
+}
+
+// Function to add a polygon layer to the map
+function addPolygonLayer(map, closure, activeLayers) {
     const geojsonData = {
         type: 'Feature',
         geometry: {
@@ -119,6 +130,23 @@ function addPolygonLayer(map, closure) {
             'fill-opacity': 0.5,
         },
     });
+
+    activeLayers.push(layerId); // Track this layer as active
+}
+
+// Function to zoom the map to fit the polygon
+function zoomToPolygon(map, closure) {
+    const geojsonData = JSON.parse(closure.geometry);
+    const bounds = new mapboxgl.LngLatBounds();
+
+    // Calculate bounds for all polygons
+    geojsonData.forEach((polygon) =>
+        polygon.forEach((ring) =>
+            ring.forEach(([lng, lat]) => bounds.extend([lng, lat]))
+        )
+    );
+
+    map.fitBounds(bounds, { padding: 20 });
 }
 
 // Initialize the map and closures
