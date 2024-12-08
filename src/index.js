@@ -2,6 +2,7 @@ import axios from 'axios'
 import dayjs from 'dayjs'
 import lodash from 'lodash'
 import { Sequelize, DataTypes } from 'sequelize';
+import { booleanPointInPolygon, centroid } from '@turf/turf'
 
 const geoApi = 'https://geo.api.vlaanderen.be/GIPOD/ogc/features/v1/collections/HINDER'
 
@@ -29,6 +30,11 @@ const Closure = sequelize.define("Closure", {
     },
     geometry: {
         type: DataTypes.STRING,
+    },
+    handled: {
+        type: DataTypes.BOOLEAN,
+        default: false,
+        allowNull: false
     }
 }, {
     name: "closure",
@@ -60,15 +66,41 @@ for (const dateRange of dateRanges) {
 }
 
 const uniqueFeatures = lodash.uniqBy(features, 'id')
-console.log(uniqueFeatures.length)
-
 const validatedFeatures = uniqueFeatures.filter((feature) => feature.properties.HindranceStatus === 'Gevalideerd')
-console.log(validatedFeatures.length)
-
 const severeFeatures = validatedFeatures.filter((feature) => feature.properties.SevereHindrance)
-console.log(severeFeatures.length)
 
-const featureIds = severeFeatures.map((feature) => feature.id)
+const myArea = {
+    type: "Feature",
+    geometry: {
+        type: "Polygon",
+        coordinates: [[
+            [4.010353, 51.002522],
+            [4.169655, 50.976805],
+            [4.162102, 50.888524],
+            [3.89637, 50.884193],
+            [3.88401, 50.959292],
+            [4.010353, 51.002522]
+        ]]
+    }
+};
+
+const severeFeaturesWithinArea = []
+for (const feature of severeFeatures) {
+    const polygon = {
+        type: "Feature",
+        geometry: {
+            type: "MultiPolygon",
+            coordinates: feature.geometry.coordinates
+        }
+    }
+    const center = centroid(polygon)
+    const hasIntersection = booleanPointInPolygon(center, myArea)
+    if (hasIntersection) {
+        severeFeaturesWithinArea.push(feature)
+    }
+}
+
+const featureIds = severeFeaturesWithinArea.map((feature) => feature.id)
 
 // Check if features were deleted
 const result = await Closure.findAll({
@@ -81,7 +113,7 @@ for (const closure of result) {
     }
 }
 
-for (const feature of severeFeatures) {
+for (const feature of severeFeaturesWithinArea) {
     // Check if we already know about this feature
     const result = await Closure.findByPk(feature.id)
     if (result) {
@@ -97,6 +129,7 @@ for (const feature of severeFeatures) {
                 lastUpdate: feature.properties.HindranceLastModifiedOn,
                 hindrance: feature.properties.Consequences,
                 geometry: JSON.stringify(feature.geometry.coordinates),
+                handled: false
             })
             await result.save()
         } else {
@@ -112,6 +145,7 @@ for (const feature of severeFeatures) {
             lastUpdate: feature.properties.HindranceLastModifiedOn,
             hindrance: feature.properties.Consequences,
             geometry: JSON.stringify(feature.geometry.coordinates),
+            handled: false
         })
     }
 }
