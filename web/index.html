@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closure Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Closures</h2>
+            <ul id="closure-list"></ul>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+            <div id="details">
+                <h3>Details</h3>
+                <p><strong>Description:</strong> <span id="description"></span></p>
+                <p><strong>Hindrance:</strong> <span id="hindrance"></span></p>
+                <p><strong>Handled:</strong> <span id="handled"></span></p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

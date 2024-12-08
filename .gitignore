@@ -1,3 +1,4 @@
 node_modules/
 gipod.sqlite
 .DS_Store
+.env
