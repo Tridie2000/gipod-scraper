@@ -67,6 +67,24 @@ app.get('/api/closures', async (_, res) => {
     }
 });
 
+app.patch('/api/closures/:id/toggle', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const closure = await Closure.findByPk(id);
+        if (!closure) {
+            return res.status(404).json({ error: 'Closure not found' });
+        }
+        // Toggle the 'handled' state
+        closure.handled = !closure.handled;
+        await closure.save();
+        res.json({ id: closure.id, handled: closure.handled });
+    } catch (error) {
+        console.error('Error toggling handled state:', error);
+        res.status(500).json({ error: 'Unable to toggle handled state' });
+    }
+});
+
+
 app.listen(PORT, async () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     try {

@@ -17,6 +17,17 @@ async function fetchClosures() {
     return response.json();
 }
 
+// Toggle the 'handled' state of a closure
+async function toggleHandled(id) {
+    const response = await fetch(`/api/closures/${id}/toggle`, {
+        method: 'PATCH',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to toggle handled state');
+    }
+    return response.json();
+}
+
 // Initialize the Mapbox map
 async function initializeMap() {
     try {
@@ -44,60 +55,71 @@ function populateClosureList(closures, map) {
     const descriptionEl = document.getElementById('description');
     const hindranceEl = document.getElementById('hindrance');
     const handledEl = document.getElementById('handled');
+    const toggleButton = document.getElementById('toggle-button');
+    let geojsonLayer = null;
 
     closures.forEach((closure, index) => {
         const li = document.createElement('li');
-        li.textContent = `Closure ${index + 1}`;
-        li.addEventListener('click', () => {
+        li.textContent = `${closure.description.slice(0, 20)} (${index + 1})`;
+        li.addEventListener('click', async () => {
             // Display closure details
             descriptionEl.textContent = closure.description;
             hindranceEl.textContent = closure.hindrance;
             handledEl.textContent = closure.handled ? 'Yes' : 'No';
 
-            const layerId = `closure-${closure.id}`;
+            // Update toggle button
+            toggleButton.onclick = async () => {
+                const updatedClosure = await toggleHandled(closure.id);
+                handledEl.textContent = updatedClosure.handled ? 'Yes' : 'No';
+                closure.handled = updatedClosure.handled;
 
-            // Check if a layer already exists, and remove it
-            if (map.getSource(layerId)) {
-                map.removeLayer(layerId);
-                map.removeSource(layerId);
+                // Update polygon color
+                if (geojsonLayer) {
+                    map.removeLayer(geojsonLayer.id);
+                    map.removeSource(geojsonLayer.id);
+                }
+                addPolygonLayer(map, closure);
+            };
+
+            // Remove existing GeoJSON layer
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer.id);
+                map.removeSource(geojsonLayer.id);
             }
 
             // Add new GeoJSON layer
-            const geojsonData = {
-                type: 'Feature',
-                geometry: {
-                    type: 'MultiPolygon',
-                    coordinates: JSON.parse(closure.geometry),
-                },
-            };
-
-            map.addSource(layerId, {
-                type: 'geojson',
-                data: geojsonData,
-            });
-
-            map.addLayer({
-                id: layerId,
-                type: 'fill',
-                source: layerId,
-                paint: {
-                    'fill-color': '#888888',
-                    'fill-opacity': 0.5,
-                },
-            });
-
-            // Zoom to fit the polygon
-            const bounds = new mapboxgl.LngLatBounds();
-            geojsonData.geometry.coordinates[0].forEach((polygon) =>
-                polygon.forEach(([lng, lat]) => bounds.extend([lng, lat]))
-            );
-            map.fitBounds(bounds, { padding: 20 });
+            addPolygonLayer(map, closure);
         });
 
         closureList.appendChild(li);
     });
 }
 
+function addPolygonLayer(map, closure) {
+    const geojsonData = {
+        type: 'Feature',
+        geometry: {
+            type: 'MultiPolygon',
+            coordinates: JSON.parse(closure.geometry),
+        },
+    };
+
+    const layerId = `closure-${closure.id}`;
+    map.addSource(layerId, {
+        type: 'geojson',
+        data: geojsonData,
+    });
+
+    map.addLayer({
+        id: layerId,
+        type: 'fill',
+        source: layerId,
+        paint: {
+            'fill-color': closure.handled ? '#888888' : '#FF0000',
+            'fill-opacity': 0.5,
+        },
+    });
+}
 
 // Initialize the map and closures
 initializeMap();
