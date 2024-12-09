@@ -55,7 +55,7 @@ function initializeFilter(closures, map) {
     const filterSelect = document.getElementById('filter');
 
     // Populate the list initially with all closures
-    updateClosureList(closures, map, 'all');
+    updateClosureList(closures, map, 'open');
 
     // Update the list whenever the filter changes
     filterSelect.addEventListener('change', () => {
@@ -116,6 +116,7 @@ function handleClosureClick(closure, map) {
                 updatedClosure.handled ? '#888888' : '#FF0000'
             );
         }
+        initializeMap()
     };
 
     // Remove all active polygons
