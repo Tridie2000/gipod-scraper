@@ -1,8 +1,8 @@
-import { InversifyExpressServer } from 'inversify-express-utils';
-import { container } from './ioc/container';
 import bodyParser from 'body-parser';
 import express from 'express';
+import { InversifyExpressServer } from 'inversify-express-utils';
 
+import { container } from './ioc/container';
 import './controllers/health.controller';
 import './controllers/closures.controller';
 import './controllers/mapbox.token.controller';

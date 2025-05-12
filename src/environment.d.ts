@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/prevent-abbreviations */
+// noinspection JSUnusedGlobalSymbols
+
 declare global {
   namespace NodeJS {
     interface ProcessEnv {

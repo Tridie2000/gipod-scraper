@@ -1,16 +1,36 @@
-import { inject, injectable } from 'inversify';
-import { PrismaProvider } from '../providers/prisma.provider';
+import { booleanPointInPolygon, centroid } from '@turf/turf';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import lodash from 'lodash';
-import { booleanPointInPolygon, centroid } from '@turf/turf';
+
+import { PrismaProvider } from '../providers/prisma.provider';
 
 const geoApi = 'https://geo.api.vlaanderen.be/GIPOD/ogc/features/v1/collections/HINDER';
 
+/**
+ * A service responsible for importing closure data from a remote API,
+ * validating and filtering the data, checking intersection with a predefined area,
+ * and updating the internal database based on the processed information.
+ */
 @injectable()
 export class ClosuresImportService {
+  /**
+   * Constructs an instance of the class with the provided PrismaProvider dependency.
+   * @param prisma - The PrismaProvider instance used for database operations.
+   * @returns An instance of the class initialized with the given PrismaProvider.
+   */
   public constructor(@inject('PrismaProvider') private prisma: PrismaProvider) {}
 
+  /**
+   * Imports data from an external API, processes it to identify relevant features based on specific criteria,
+   * and updates the database to reflect the current state of closures by creating, updating, or deleting records.
+   *
+   * The method involves fetching data for specific date ranges, filtering and validating the features based on
+   * their properties, checking for intersections with a predefined area, and then comparing the filtered features
+   * with the existing database records to determine changes or updates needed.
+   * @returns A promise that resolves once the import and database updates are complete.
+   */
   public async import() {
     const dateRanges = this.getDateRanges();
     const features = [];
@@ -32,32 +52,32 @@ export class ClosuresImportService {
     );
 
     const myArea = {
-      type: 'Feature' as const,
       geometry: {
-        type: 'Polygon' as const,
         coordinates: [
           [
-            [4.010353, 51.002522],
-            [4.169655, 50.976805],
-            [4.162102, 50.888524],
-            [3.89637, 50.884193],
-            [3.88401, 50.959292],
-            [4.010353, 51.002522],
+            [4.010_353, 51.002_522],
+            [4.169_655, 50.976_805],
+            [4.162_102, 50.888_524],
+            [3.896_37, 50.884_193],
+            [3.884_01, 50.959_292],
+            [4.010_353, 51.002_522],
           ],
         ],
+        type: 'Polygon' as const,
       },
       properties: {},
+      type: 'Feature' as const,
     };
 
     const severeFeaturesWithinArea = [];
     for (const feature of severeFeatures) {
       const polygon = {
-        type: 'Feature',
         geometry: {
-          type: 'MultiPolygon',
           coordinates: feature.geometry.coordinates,
+          type: 'MultiPolygon',
         },
         properties: {},
+        type: 'Feature',
       } as const;
       const center = centroid(polygon);
       const hasIntersection = booleanPointInPolygon(center, myArea);
@@ -66,11 +86,11 @@ export class ClosuresImportService {
       }
     }
 
-    const featureIds = severeFeaturesWithinArea.map((feature) => feature.id);
+    const featureIds = new Set(severeFeaturesWithinArea.map((feature) => feature.id));
 
     const result = await this.prisma.client.closure.findMany({ select: { id: true } });
     for (const closure of result) {
-      if (!featureIds.includes(closure.id)) {
+      if (!featureIds.has(closure.id)) {
         console.log('Closure deleted:', closure.id);
         await this.prisma.client.closure.delete({ where: { id: closure.id } });
       }
@@ -83,48 +103,56 @@ export class ClosuresImportService {
         // Check if there is an update
         const dateInDatabase = dayjs(result.lastUpdate).toISOString();
         const dateOfFeature = dayjs(feature.properties.HindranceLastModifiedOn).toISOString();
-        if (dateInDatabase !== dateOfFeature) {
+        if (dateInDatabase === dateOfFeature) {
+          console.log('No changes detected for feature:', feature.id);
+        } else {
           console.log('Update on existing closure:', feature.id);
           await this.prisma.client.closure.update({
-            where: { id: feature.id },
             data: {
-              start: feature.properties.HindranceStart,
-              end: feature.properties.HindranceEnd,
               description: feature.properties.HindranceDescription,
-              lastUpdate: feature.properties.HindranceLastModifiedOn,
-              hindrance: feature.properties.Consequences,
+              end: feature.properties.HindranceEnd,
               geometry: JSON.stringify(feature.geometry.coordinates),
               handled: false,
+              hindrance: feature.properties.Consequences,
+              lastUpdate: feature.properties.HindranceLastModifiedOn,
+              start: feature.properties.HindranceStart,
             },
+            where: { id: feature.id },
           });
-        } else {
-          console.log('No changes detected for feature:', feature.id);
         }
       } else {
         console.log('New closure:', feature.id);
         await this.prisma.client.closure.create({
           data: {
-            id: feature.id,
-            start: feature.properties.HindranceStart,
-            end: feature.properties.HindranceEnd,
             description: feature.properties.HindranceDescription,
-            lastUpdate: feature.properties.HindranceLastModifiedOn,
-            hindrance: feature.properties.Consequences,
+            end: feature.properties.HindranceEnd,
             geometry: JSON.stringify(feature.geometry.coordinates),
             handled: false,
+            hindrance: feature.properties.Consequences,
+            id: feature.id,
+            lastUpdate: feature.properties.HindranceLastModifiedOn,
+            start: feature.properties.HindranceStart,
           },
         });
       }
     }
   }
 
+  /**
+   * Generates an array of date ranges for the next 5 days, starting from tomorrow.
+   *
+   * Each date range is represented as a string in the format `startDate/endDate`,
+   * where `startDate` and `endDate` are ISO 8601 formatted strings representing
+   * the start and end of the day respectively.
+   * @returns An array of strings, where each string represents a date range for a single day.
+   */
   private getDateRanges() {
     const dateRanges = [];
     const tomorrow = dayjs().add(1, 'day').startOf('day');
 
-    for (let i = 0; i < 5; i++) {
-      const start = tomorrow.add(i, 'day').startOf('day').toISOString();
-      const end = tomorrow.add(i, 'day').endOf('day').toISOString();
+    for (let index = 0; index < 5; index++) {
+      const start = tomorrow.add(index, 'day').startOf('day').toISOString();
+      const end = tomorrow.add(index, 'day').endOf('day').toISOString();
       dateRanges.push(`${start}/${end}`);
     }
 

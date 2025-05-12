@@ -1,7 +1,8 @@
 import { Container } from 'inversify';
+
 import { PrismaProvider } from '../providers/prisma.provider';
-import { ClosuresService } from '../services/closures.service';
 import { ClosuresImportService } from '../services/closures.import.service';
+import { ClosuresService } from '../services/closures.service';
 
 export const container = new Container();
 
