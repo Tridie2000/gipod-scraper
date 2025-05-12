@@ -4,3 +4,4 @@ gipod.sqlite
 build/
 dist/
 .idea/
+.env*
