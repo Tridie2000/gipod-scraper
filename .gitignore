@@ -3,3 +3,4 @@ gipod.sqlite
 .DS_Store
 build/
 dist/
+.idea/

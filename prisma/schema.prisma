@@ -15,8 +15,7 @@ model Closure {
   description String?
   hindrance   String
   geometry    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  handled     Boolean  @default(false)
 
   @@map("closure")
 }

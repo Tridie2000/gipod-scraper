@@ -4,7 +4,9 @@
     "incremental": true,
     "module": "CommonJS",
     "target": "ES2021",
-    "lib": ["ES2021"],
+    "lib": [
+      "ES2021"
+    ],
     "outDir": "build",
     "sourceMap": true,
     "declaration": true,
@@ -16,7 +18,12 @@
     "skipLibCheck": true
   },
   "compileOnSave": true,
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
+  "files": [
+    "src/env.d.ts"
+  ],
   "ts-node": {
     "files": true
   }

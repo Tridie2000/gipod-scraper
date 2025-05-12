@@ -1,10 +1,10 @@
 import { Container } from 'inversify';
-import { GiPodService } from '../services/gipod.service';
-import { LdesProvider } from '../providers/ldes.provider';
 import { PrismaProvider } from '../providers/prisma.provider';
+import { ClosuresService } from '../services/closures.service';
+import { ClosuresImportService } from '../services/closures.import.service';
 
 export const container = new Container();
 
 container.bind<PrismaProvider>('PrismaProvider').to(PrismaProvider).inSingletonScope();
-container.bind<LdesProvider>('LdesProvider').to(LdesProvider).inSingletonScope();
-container.bind<GiPodService>('GiPodService').to(GiPodService).inSingletonScope();
+container.bind<ClosuresService>('ClosuresService').to(ClosuresService).inSingletonScope();
+container.bind<ClosuresImportService>('ClosuresImportService').to(ClosuresImportService).inSingletonScope();

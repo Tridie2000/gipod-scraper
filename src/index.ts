@@ -1,15 +1,20 @@
 import { InversifyExpressServer } from 'inversify-express-utils';
 import { container } from './ioc/container';
 import bodyParser from 'body-parser';
+import express from 'express';
 
 import './controllers/health.controller';
-import './controllers/gipod.controller';
+import './controllers/closures.controller';
+import './controllers/mapbox.token.controller';
 
 const server = new InversifyExpressServer(container);
 server.setConfig((app) => {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
+  app.use(express.static('web'));
 });
 
+const PORT = 9300;
+
 const app = server.build();
-app.listen(6000, () => console.info('Server is listening on port 6000'));
+app.listen(PORT, () => console.info(`Server is listening on port ${PORT}`));
