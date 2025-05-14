@@ -1,0 +1,9 @@
+build/
+node_modules/
+gipod.sqlite
+eslint.config.mjs
+.prettierrc.json
+.prettierignore
+.gitignore
+.env
+.editorconfig

@@ -14,7 +14,7 @@ server.setConfig((app) => {
   app.use(express.static('web'));
 });
 
-const PORT = 9300;
+const PORT = process.env.PORT || 9300;
 
 const app = server.build();
 app.listen(PORT, () => console.info(`Server is listening on port ${PORT}`));
